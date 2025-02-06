@@ -30,6 +30,11 @@ spec:
       description: The Trusted Artifact URI pointing to the artifact with
         the application source code.
       type: string
+    - name: CACHI2_ARTIFACT
+      description: The Trusted Artifact URI pointing to the artifact with
+        the prefetched dependencies.
+      type: string
+      default: ""
     - name: go-version
       type: string
       description: >-
@@ -95,12 +100,13 @@ spec:
       args:
         - use
         - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+        - $(params.CACHI2_ARTIFACT)=/cachi2
     - name: sealights-go-instrumentation
       image: registry.access.redhat.com/ubi8/go-toolset:$(params.go-version)
       computeResources:
         limits:
-          memory: 4Gi
-          cpu: "1"
+          memory: 1Gi
+          cpu: 500
         requests:
           cpu: 200m
           memory: 512Mi
@@ -132,6 +138,8 @@ spec:
       script: |
         #!/bin/bash
         set -euo pipefail
+        ls -larth /cachi2
+        source /cachi2/cachi2.env
 
         export SEALIGHTS_TOKEN BUILD_NAME BSID PACKAGES_EXCLUDED_ENUM
 
