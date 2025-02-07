@@ -88,10 +88,14 @@ spec:
         secretName: sealights-credentials
     - name: workdir
       emptyDir: {}
+    - name: cachi2
+      emptyDir: {}
   stepTemplate:
     volumeMounts:
       - mountPath: /var/workdir
         name: workdir
+      - mountPath: /cachi2
+        name: cachi2
       - name: sealights-credentials
         mountPath: /usr/local/sealights-credentials
   steps:
@@ -105,8 +109,8 @@ spec:
       image: registry.access.redhat.com/ubi8/go-toolset:$(params.go-version)
       computeResources:
         limits:
-          memory: 1Gi
-          cpu: 500
+          memory: 2Gi
+          cpu: "1"
         requests:
           cpu: 200m
           memory: 512Mi
@@ -138,8 +142,10 @@ spec:
       script: |
         #!/bin/bash
         set -euo pipefail
-        ls -larth /cachi2
-        source /cachi2/cachi2.env
+
+        . /cachi2/cachi2.env
+
+        ls -larth /cachi2/output/deps/gomod/pkg/mod/cache/download
 
         export SEALIGHTS_TOKEN BUILD_NAME BSID PACKAGES_EXCLUDED_ENUM
 
@@ -168,7 +174,7 @@ spec:
           slcli config create-bsid --app "${COMPONENT}" --branch "${BRANCH}" --build "${BUILD_NAME}"
         fi
 
-        slcli scan --packages-excluded "${PACKAGES_EXCLUDED_ENUM}" --bsid buildSessionId.txt --path-to-scanner /usr/local/bin/slgoagent \
+        . /cachi2/cachi2.env && slcli scan --packages-excluded "${PACKAGES_EXCLUDED_ENUM}" --bsid buildSessionId.txt --path-to-scanner /usr/local/bin/slgoagent \
           --workspacepath ./ --scm git --scmProvider "${SCM_PROVIDER}" --scmVersion "0" --scmBaseUrl "${REPOSITORY_URL}" --debug="${DEBUG}"
 
         echo -n "$(cat buildSessionId.txt)" > "$(results.sealights-bsid.path)"
